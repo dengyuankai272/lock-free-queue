@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicStampedReference;
  * Created by shunlv on 16-3-7.
  */
 public class ArrayLockFreeQueue implements LockFreeQueue {
-  private AtomicReferenceArray<Node> referenceArray;
+  private AtomicReferenceArray<AtomicStampedReference<Node>> referenceArray;
   private AtomicStampedReference<Integer> head;
   private AtomicStampedReference<Integer> tail;
 
@@ -29,8 +29,11 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
     int nextStamp;
     int nextTail;
 
-    Node originNode;
     Node node = new Node(value);
+    AtomicStampedReference<Node> reference;
+
+    int nextTailNodeStamp = 0;
+    Node nextTailNodeValue = null;
     do {
       originStamp = tail.getStamp();
       originTail = tail.getReference();
@@ -38,13 +41,28 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
       nextStamp = originStamp + 1;
       nextTail = (originTail + 1) % len;
 
-      originNode = referenceArray.get(nextTail);
+      reference = referenceArray.get(nextTail);
+      if (reference != null) {
+        nextTailNodeStamp = reference.getStamp();
+        nextTailNodeValue = reference.getReference();
+      }
     } while (!(isFull = isFull())
-        && !(tail.compareAndSet(originTail, nextTail, originStamp, nextStamp)
-        && referenceArray.compareAndSet(nextTail, originNode, node)) // todo fix ABA
-        );
+        && !tail.compareAndSet(originTail, nextTail, originStamp, nextStamp));
 
     if (isFull) {
+      return null;
+    }
+
+    if (reference == null) {
+      reference = new AtomicStampedReference<>(node, 0);
+      if (!referenceArray.compareAndSet(nextTail, null, reference)) {
+        return null;
+      } else {
+        return node;
+      }
+    }
+
+    if (!reference.compareAndSet(nextTailNodeValue, node, nextTailNodeStamp, nextTailNodeStamp + 1)) {
       return null;
     }
 
@@ -61,7 +79,7 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
     int nextHeadStamp;
     int nextHead;
 
-    Node nextHeadNode;
+    Node nextHeadNode = null;
     do {
       originHeadStamp = head.getStamp();
       originHead = head.getReference();
@@ -69,8 +87,12 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
       nextHeadStamp = originHeadStamp + 1;
       nextHead = (originHead + 1) % len;
 
-      nextHeadNode = referenceArray.get(nextHead);
-    } while (!(isEmpty = isEmpty()) && !head.compareAndSet(originHead, nextHead, originHeadStamp, nextHeadStamp));
+      AtomicStampedReference<Node> reference = referenceArray.get(nextHead);
+      if (reference != null) {
+        nextHeadNode = reference.getReference();
+      }
+    } while (!(isEmpty = isEmpty())
+        && !head.compareAndSet(originHead, nextHead, originHeadStamp, nextHeadStamp));
 
     if (isEmpty) {
       return null;
