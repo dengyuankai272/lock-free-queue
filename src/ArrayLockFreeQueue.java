@@ -1,10 +1,11 @@
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
 /**
  * Created by shunlv on 16-3-7.
  */
 public class ArrayLockFreeQueue implements LockFreeQueue {
-  private Node[] nodes;
+  private AtomicReferenceArray<Node> referenceArray;
   private AtomicStampedReference<Integer> head;
   private AtomicStampedReference<Integer> tail;
 
@@ -12,17 +13,10 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
 
   public ArrayLockFreeQueue(int len) {
     this.len = len;
-    this.head = new AtomicStampedReference<Integer>(0, 0);
-    this.tail = new AtomicStampedReference<Integer>(0, 0);
+    this.head = new AtomicStampedReference<>(0, 0);
+    this.tail = new AtomicStampedReference<>(0, 0);
 
-    initNodes(len);
-  }
-
-  private void initNodes(int len) {
-    nodes = new Node[len];
-    for (int i = 0; i < len; i++) {
-      nodes[i] = new Node(new AtomicStampedReference<Object>(null, 0));
-    }
+    this.referenceArray = new AtomicReferenceArray<>(len);
   }
 
   @Override
@@ -35,11 +29,8 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
     int nextStamp;
     int nextTail;
 
-    Node nextTailNode;
-    AtomicStampedReference nextTailValue;
-    int nextTailNodeStamp;
-    Object nextTailNodeValue;
-
+    Node originNode;
+    Node node = new Node(value);
     do {
       originStamp = tail.getStamp();
       originTail = tail.getReference();
@@ -47,20 +38,17 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
       nextStamp = originStamp + 1;
       nextTail = (originTail + 1) % len;
 
-      nextTailNode = nodes[nextTail];
-      nextTailValue = (AtomicStampedReference) nextTailNode.getValue();
-      nextTailNodeStamp = nextTailValue.getStamp();
-      nextTailNodeValue = nextTailValue.getReference();
-    } while (!(isFull = isFull()) && !tail.compareAndSet(originTail, nextTail, originStamp, nextStamp));
+      originNode = referenceArray.get(nextTail);
+    } while (!(isFull = isFull())
+        && !(tail.compareAndSet(originTail, nextTail, originStamp, nextStamp)
+        && referenceArray.compareAndSet(nextTail, originNode, node)) // todo fix ABA
+        );
 
     if (isFull) {
       return null;
     }
 
-    nextTailValue.compareAndSet(nextTailNodeValue, value, nextTailNodeStamp, nextTailNodeStamp + 1);
-
-    // todo fix: node value maybe changed
-    return nextTailNode;
+    return node;
   }
 
   @Override
@@ -74,7 +62,6 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
     int nextHead;
 
     Node nextHeadNode;
-
     do {
       originHeadStamp = head.getStamp();
       originHead = head.getReference();
@@ -82,7 +69,7 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
       nextHeadStamp = originHeadStamp + 1;
       nextHead = (originHead + 1) % len;
 
-      nextHeadNode = nodes[nextHead];
+      nextHeadNode = referenceArray.get(nextHead);
     } while (!(isEmpty = isEmpty()) && !head.compareAndSet(originHead, nextHead, originHeadStamp, nextHeadStamp));
 
     if (isEmpty) {
