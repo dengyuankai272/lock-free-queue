@@ -2,7 +2,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by shunlv on 16-3-7.
- *
+ * <p/>
  * // todo fix ABA
  */
 public class ArrayLockFreeQueue implements LockFreeQueue {
@@ -11,14 +11,12 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
   private AtomicInteger tail;
 
   private final int len;
-  private int size;
 
   public ArrayLockFreeQueue(int len) {
     this.nodes = new Node[len];
     this.head = new AtomicInteger(0);
     this.tail = new AtomicInteger(0);
     this.len = len;
-    this.size = 0;
   }
 
   @Override
@@ -37,7 +35,6 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
     }
 
     nodes[nextTail] = new Node(value);
-    size++;
 
     return nodes[originTail];
   }
@@ -57,8 +54,6 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
       return null;
     }
 
-    size--;
-
     return nodes[nextHead];
   }
 
@@ -76,12 +71,12 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
 
   @Override
   public boolean isEmpty() {
-    return size == 0;
+    return getSize() == 0;
   }
 
   @Override
   public boolean isFull() {
-    return size >= len;
+    return getSize() >= len - 1;
   }
 
   private boolean compareAndSetTail(int current, int replace) {
