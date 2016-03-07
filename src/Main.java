@@ -1,6 +1,7 @@
 public class Main {
   public static void main(String[] args) throws Exception {
     LockFreeQueue queue = new LinkedListLockFreeQueue();
+//    LockFreeQueue queue = new ArrayLockFreeQueue(10);
 
     Runnable in = new In(queue);
     Thread in1 = new Thread(in);
@@ -16,6 +17,9 @@ public class Main {
     in2.start();
     in3.start();
 
+    Thread.sleep(3000);
+    System.out.println();
+
     out1.start();
     out2.start();
     out3.start();
@@ -30,7 +34,7 @@ public class Main {
 
     @Override
     public void run() {
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 5; i++) {
         queue.enq(i);
         System.out.println(Thread.currentThread().getName() + "_" + i);
       }
@@ -46,7 +50,7 @@ public class Main {
 
     @Override
     public void run() {
-      for (int i = 0; i < 15; i++) {
+      for (int i = 0; i < 10; i++) {
         System.out.println(Thread.currentThread().getName() + "_" + queue.deq());
       }
     }

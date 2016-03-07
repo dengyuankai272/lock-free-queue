@@ -5,4 +5,10 @@ public interface LockFreeQueue {
   Node enq(Object value);
 
   Node deq();
+
+  int getSize();
+
+  boolean isEmpty();
+
+  boolean isFull();
 }

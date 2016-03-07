@@ -10,10 +10,13 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
   private LinkedNode head;
   private LinkedNode tail;
 
+  private int size;
+
   public LinkedListLockFreeQueue() {
     // 初始化一个空节点，以防head和tail之间的竞争
     this.head = new LinkedNode(null, null, null);
     this.tail = head;
+    this.size = 0;
   }
 
   @Override
@@ -27,6 +30,7 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
 
     originTail.setNext(node);
     node.setPrev(originTail);
+    size++;
 
     return originTail;
   }
@@ -45,8 +49,24 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
     } while (!compareAndSetHead(originHead, nextHead));
 
     nextHead.setPrev(null);
+    size--;
 
     return nextHead;
+  }
+
+  @Override
+  public int getSize() {
+    return size;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return size == 0;
+  }
+
+  @Override
+  public boolean isFull() {
+    return false;
   }
 
   private boolean compareAndSetTail(LinkedNode current, LinkedNode replace) {
