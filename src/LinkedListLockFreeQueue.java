@@ -1,12 +1,9 @@
 import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
-
 /**
  * Created by shunlv on 16-3-7.
  */
 public class LinkedListLockFreeQueue implements LockFreeQueue {
-  private static final Unsafe unsafe;
   private LinkedNode head;
   private LinkedNode tail;
 
@@ -32,7 +29,7 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
     node.setPrev(originTail);
     size++;
 
-    return originTail;
+    return node;
   }
 
   @Override
@@ -104,14 +101,14 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
     }
   }
 
+  private static final Unsafe unsafe;
+
   private static final long tailOffset;
   private static final long headOffset;
 
   static {
     try {
-      Field f = Unsafe.class.getDeclaredField("theUnsafe");
-      f.setAccessible(true);
-      unsafe = (Unsafe) f.get(null);
+      unsafe = UnsafeUtils.getUnsafe();
 
       tailOffset = unsafe.objectFieldOffset(LinkedListLockFreeQueue.class.getDeclaredField("tail"));
       headOffset = unsafe.objectFieldOffset(LinkedListLockFreeQueue.class.getDeclaredField("head"));

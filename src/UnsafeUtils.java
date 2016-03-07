@@ -1,0 +1,14 @@
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
+
+/**
+ * Created by shunlv on 16-3-7.
+ */
+public class UnsafeUtils {
+  public static Unsafe getUnsafe() throws Exception {
+    Field f = Unsafe.class.getDeclaredField("theUnsafe");
+    f.setAccessible(true);
+    return (Unsafe) f.get(null);
+  }
+}
