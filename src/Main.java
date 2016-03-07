@@ -1,7 +1,7 @@
 public class Main {
   public static void main(String[] args) throws Exception {
-    LockFreeQueue queue = new LinkedListLockFreeQueue();
-//    LockFreeQueue queue = new ArrayLockFreeQueue(10);
+//    LockFreeQueue queue = new LinkedListLockFreeQueue();
+    LockFreeQueue queue = new ArrayLockFreeQueue(10);
 
     Runnable in = new In(queue);
     Thread in1 = new Thread(in);

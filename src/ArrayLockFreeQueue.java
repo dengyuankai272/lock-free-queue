@@ -2,6 +2,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by shunlv on 16-3-7.
+ *
+ * // todo fix ABA
  */
 public class ArrayLockFreeQueue implements LockFreeQueue {
   private Node[] nodes;
