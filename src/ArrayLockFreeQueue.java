@@ -59,6 +59,7 @@ public class ArrayLockFreeQueue implements LockFreeQueue {
 
     nextTailValue.compareAndSet(nextTailNodeValue, value, nextTailNodeStamp, nextTailNodeStamp + 1);
 
+    // todo fix: node value maybe changed
     return nextTailNode;
   }
 
