@@ -23,10 +23,10 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
 
     do {
       originTail = tail;
+      node.setPrev(originTail);
     } while (!compareAndSetTail(originTail, node));
 
     originTail.setNext(node);
-    node.setPrev(originTail);
     size++;
 
     return node;
@@ -46,6 +46,7 @@ public class LinkedListLockFreeQueue implements LockFreeQueue {
     } while (!compareAndSetHead(originHead, nextHead));
 
     nextHead.setPrev(null);
+    originHead.setNext(null); // help GC
     size--;
 
     return nextHead;
